@@ -212,6 +212,7 @@ class MemoryLoader:
         self._total_data_size = 0
         self._progress_offset = 0.0
         self._current_progress_fraction = 0.0
+        self._policy_skipped_bytes = 0
 
     def add_data(self, address, data):
         """@brief Add a chunk of data to be programmed.
@@ -231,10 +232,25 @@ class MemoryLoader:
             not run successfully.
         """
         while len(data):
+            skip_external = bool(self._session.options.get('flash.skip_external'))
+
             # Look up the memory region for this address.
             region = self._map.get_region_for_address(address, self._session.target.selected_core.node_name)
             if region is None:
+                if skip_external and (0x08400000 <= address <= 0x08FFFFFF):
+                    skip_len = min(len(data), (0x09000000 - address))
+                    self._policy_skipped_bytes += skip_len
+                    data = data[skip_len:]
+                    address += skip_len
+                    continue
                 raise ValueError("no memory region defined for address 0x%08x" % address)
+
+            if skip_external and getattr(region, "is_external", False):
+                program_length = min(len(data), region.end - address + 1)
+                self._policy_skipped_bytes += program_length
+                data = data[program_length:]
+                address += program_length
+                continue
 
             region_builder = self._builders.get(region, None)
 
@@ -328,6 +344,10 @@ class MemoryLoader:
 
         # Report programming statistics.
         self._log_performance(perfList)
+
+        if self._policy_skipped_bytes:
+            LOG.info("Skipped %d bytes in external flash ranges due to flash.skip_external option",
+                    self._policy_skipped_bytes)
 
         # Clear state to allow reuse.
         self._reset_state()

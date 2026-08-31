@@ -72,6 +72,8 @@ BUILTIN_OPTIONS = [
     OptionInfo('fast_program', bool, False,
         "Setting this option to True will use CRC checks of existing flash sector contents to "
         "determine whether pages need to be programmed."),
+    OptionInfo('flash.skip_external', bool, False,
+        "If True, skip data chunks that fall into external flash regions while programming."),
     OptionInfo('flash.timeout.init', float, 5.0,
         "Flash algorithm init and uninit timeout in seconds."),
     OptionInfo('flash.timeout.analyzer', float, 30.0,
