@@ -146,6 +146,12 @@ from . import target_STM32H7B0xx
 from . import target_Air001
 from . import target_Air32F103xx
 from . import target_AMA3B1KK
+from . import target_AT32F403A_407
+from . import target_AT32F421
+from . import target_GD32F30x
+from . import target_N32G003
+from . import target_N32WB03x
+from . import target_MH2457
 
 ## @brief Dictionary of all builtin targets.
 #
@@ -359,4 +365,34 @@ BUILTIN_TARGETS = {
           'air32f103xe': target_Air32F103xx.Air32F103xE,
           'air32f103xg': target_Air32F103xx.Air32F103xG,
           'ama3b1kk_kbr': target_AMA3B1KK.AMA3B1KK_KBR,
+          # AT32F403A
+          'at32f403axc': target_AT32F403A_407.AT32F403ACCT7,
+          'at32f403axe': target_AT32F403A_407.AT32F403ACET7,
+          'at32f403axg': target_AT32F403A_407.AT32F403ACGT7,
+          # AT32F407
+          'at32f407xc': target_AT32F403A_407.AT32F407RCT7,
+          'at32f407xe': target_AT32F403A_407.AT32F407RET7,
+          'at32f407xg': target_AT32F403A_407.AT32F407RGT7,
+          # AT32F421
+          'at32f421x8': target_AT32F421.AT32F421C8T7,
+          'at32f421x6': target_AT32F421.AT32F421C6T7,
+          'at32f421x4': target_AT32F421.AT32F421C4T7,
+          # GD32F30x
+          'gd32f303xc': target_GD32F30x.GD32F303RC,
+          'gd32f303xe': target_GD32F30x.GD32F303RE,
+          'gd32f303xg': target_GD32F30x.GD32F303RG,
+          'gd32f303xi': target_GD32F30x.GD32F303RI,
+          'gd32f303xk': target_GD32F30x.GD32F303RK,
+          'gd32f305xc': target_GD32F30x.GD32F305RC,
+          'gd32f305xe': target_GD32F30x.GD32F305RE,
+          'gd32f305xg': target_GD32F30x.GD32F305RG,
+          'gd32f307xc': target_GD32F30x.GD32F307RC,
+          'gd32f307xe': target_GD32F30x.GD32F307RE,
+          'gd32f307xg': target_GD32F30x.GD32F307RG,
+          # N32G003
+          'n32g003': target_N32G003.N32G003F5,
+          # N32WB03x
+          'n32wb03x': target_N32WB03x.N32WB031,
+          # MH2457
+          'mh2457': target_MH2457.MH2457,
          }
