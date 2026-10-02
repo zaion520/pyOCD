@@ -123,6 +123,7 @@ class _CTraceRunParser:
             (re.compile(r'^DWT_COMP(\d+)$'), 0x020, 0x10),
             (re.compile(r'^DWT_MASK(\d+)$'), 0x024, 0x10),
             (re.compile(r'^DWT_FUNCTION(\d+)$'), 0x028, 0x10),
+            (re.compile(r'^DWT_VMASK(\d+)$'), 0x02C, 0x10),
         ),
         'PMU': (
             (re.compile(r'^PMU_EVCNTR(\d+)$'), 0x000, 4),
@@ -189,7 +190,14 @@ class _CTraceRunParser:
             if isinstance(ref, dict) and ref.get('regs') is None:
                 continue
             try:
-                reference, ref_access = self._parse_register_entry(ref, f"ctrace-refs#{ref_index}")
+                if not isinstance(ref, dict):
+                    raise CTraceRunError(f"reference entry {ref_index} must be a dictionary")
+                ref_name = ref.get('ref')
+                if not isinstance(ref_name, str) or not ref_name:
+                    raise CTraceRunError(f"reference entry {ref_index} requires 'ref'")
+                if not isinstance(ref.get('type'), str) or not ref['type']:
+                    raise CTraceRunError(f"reference '{ref_name}' requires 'type'")
+                reference, ref_access = self._parse_register_entry(ref, ref_name)
             except CTraceRunError as err:
                 LOG.warning("Ignoring invalid ctrace-run reference in '%s': %s", self._path, err)
                 continue
