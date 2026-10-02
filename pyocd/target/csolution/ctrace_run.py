@@ -40,6 +40,8 @@ LOG = logging.getLogger(__name__)
 DEMCR = 0xE000EDFC
 DEMCR_TRCENA = (1 << 24)
 
+CYCCNT_SYNC_TOGGLE = (1 << 24) | (1 << 26) | (1 << 28)
+
 CORESIGHT_LAR_OFFSET = 0xFB0
 CORESIGHT_LAR_KEY = 0xC5ACCE55
 
@@ -72,6 +74,7 @@ class _CTraceRunData:
     references: Tuple[Tuple[str, Optional[str]], ...]
     register_access: Tuple[_CTraceRunRegister, ...]
     disable_register_access: Tuple[_CTraceRunRegister, ...]
+    sync_on_run: Tuple[Tuple[Optional[str], bool], ...]
 
 
 class _CTraceRunParser:
@@ -194,8 +197,37 @@ class _CTraceRunParser:
                 references.append(reference)
             register_access.extend(ref_access)
 
+        sync_on_run = self._parse_sync_on_run(data.get('ctrace-setup'))
         LOG.debug("Parsed ctrace-run configuration from '%s'", self._path)
-        return _CTraceRunData(tuple(references), tuple(register_access), tuple(disable_register_access))
+        return _CTraceRunData(tuple(references), tuple(register_access), tuple(disable_register_access), sync_on_run)
+
+    @staticmethod
+    def _parse_sync_on_run(setup: Any) -> Tuple[Tuple[Optional[str], bool], ...]:
+        if setup is None:
+            return ()
+        if not isinstance(setup, list):
+            raise CTraceRunError("'ctrace-setup' must be a list")
+
+        settings: List[Tuple[Optional[str], bool]] = []
+        for entry in setup:
+            if not isinstance(entry, dict):
+                raise CTraceRunError("entries in 'ctrace-setup' must be dictionaries")
+            pname = entry.get('pname')
+            if pname is not None and (not isinstance(pname, str) or not pname):
+                raise CTraceRunError("'pname' in 'ctrace-setup' must be a non-empty string")
+            if 'disable' in entry and entry['disable'] is not False:
+                settings.append((pname, False))
+                continue
+            synchronization = entry.get('synchronization')
+            if synchronization is None:
+                synchronization = {}
+            if not isinstance(synchronization, dict):
+                raise CTraceRunError("'synchronization' in 'ctrace-setup' must be a dictionary")
+            sync_enabled = synchronization.get('sync-on-run', True)
+            if not isinstance(sync_enabled, bool):
+                raise CTraceRunError("'sync-on-run' in 'ctrace-setup' must be a boolean")
+            settings.append((pname, sync_enabled))
+        return tuple(settings)
 
     def _parse_register_entry(self, entry: Any, ref_name: str) -> Tuple[Tuple[str, Optional[str]], List[_CTraceRunRegister]]:
         if not isinstance(entry, dict):
@@ -284,6 +316,7 @@ class CTraceRun:
         self._lock = threading.RLock()
         self._last_applied_digest: Optional[bytes] = None
         self._pending_config: Optional[Tuple[bytes, Optional[_CTraceRunData]]] = None
+        self._sync_on_run: Dict[Optional[str], bool] = {}
         self._last_capture_digest: Optional[bytes] = None
         self._last_error: Optional[str] = None
 
@@ -354,6 +387,7 @@ class CTraceRun:
                     if register_access:
                         self._apply_to_target(target, data, register_access)
                     if not disable:
+                        self._sync_on_run = dict(data.sync_on_run)
                         self._last_applied_digest = digest
                         self._last_error = None
 
@@ -385,6 +419,29 @@ class CTraceRun:
         with self._lock:
             self._last_applied_digest = None
             self._pending_config = None
+            self._sync_on_run = {}
+
+    def itm_force_sync(self, core: "CoreTarget") -> None:
+        """Request ITM synchronization on the selected core before execution."""
+        with self._lock:
+            LOG.debug("Requesting ITM synchronization for core '%s'", core.node_name)
+            sync_on_run = self._sync_on_run.get(core.node_name)
+            if sync_on_run is None:
+                sync_on_run = self._sync_on_run.get(None, False)
+            if not sync_on_run:
+                return
+            dwt = getattr(core, 'dwt', None)
+            if dwt is None or not dwt.has_cycle_counter:
+                return
+
+            try:
+                cyccnt = dwt.cycle_count
+                try:
+                    dwt.cycle_count = cyccnt ^ CYCCNT_SYNC_TOGGLE
+                finally:
+                    dwt.cycle_count = cyccnt
+            except exceptions.Error as err:
+                LOG.warning("Failed to force ITM synchronization for processor '%s': %s", core.node_name, err)
 
     def _trace_restart_handler(self, notification: "Notification") -> None:
         """Invalidate the applied configuration after target trace support restarts."""
