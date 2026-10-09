@@ -365,16 +365,8 @@ BUILTIN_TARGETS = {
           'air32f103xe': target_Air32F103xx.Air32F103xE,
           'air32f103xg': target_Air32F103xx.Air32F103xG,
           'ama3b1kk_kbr': target_AMA3B1KK.AMA3B1KK_KBR,
-          # AT32F403A
-          'at32f403axc': target_AT32F403A_407.AT32F403ACCT7,
-          'at32f403axe': target_AT32F403A_407.AT32F403ACET7,
-          'at32f403axg': target_AT32F403A_407.AT32F403ACGT7,
-          'at32f403a': target_AT32F403A_407.AT32F403ACGT7,
-          # AT32F407
-          'at32f407xc': target_AT32F403A_407.AT32F407RCT7,
-          'at32f407xe': target_AT32F403A_407.AT32F407RET7,
-          'at32f407xg': target_AT32F403A_407.AT32F407RGT7,
-          'at32f407': target_AT32F403A_407.AT32F407RGT7,
+          # AT32F403A & AT32F407 (base + external SPIM flash variants)
+          **target_AT32F403A_407.TARGET_MAP,
           # AT32F421
           'at32f421x8': target_AT32F421.AT32F421C8T7,
           'at32f421x6': target_AT32F421.AT32F421C6T7,
