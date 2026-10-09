@@ -237,8 +237,8 @@ class MemoryLoader:
             # Look up the memory region for this address.
             region = self._map.get_region_for_address(address, self._session.target.selected_core.node_name)
             if region is None:
-                if skip_external and (0x08400000 <= address <= 0x08FFFFFF):
-                    skip_len = min(len(data), (0x09000000 - address))
+                if skip_external and (0x08400000 <= address <= 0x093FFFFF):
+                    skip_len = min(len(data), (0x09400000 - address))
                     self._policy_skipped_bytes += skip_len
                     data = data[skip_len:]
                     address += skip_len

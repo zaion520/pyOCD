@@ -33,6 +33,8 @@ BUILTIN_OPTIONS = [
         "takes precedence over this option if set."),
     OptionInfo('allow_no_cores', bool, False,
         "Prevents raising an error if no cores were found after CoreSight discovery."),
+    OptionInfo('at32.spim_algo', str, 'type2_remap1',
+        "External flash (SPIM) algorithm for AT32 targets (type1_remap0, type1_remap1, type2_remap0, type2_remap1)."),
     OptionInfo('auto_unlock', bool, True,
         "Whether to unlock secured target by erasing."),
     OptionInfo('cache.enable_memory', bool, True,

@@ -369,10 +369,12 @@ BUILTIN_TARGETS = {
           'at32f403axc': target_AT32F403A_407.AT32F403ACCT7,
           'at32f403axe': target_AT32F403A_407.AT32F403ACET7,
           'at32f403axg': target_AT32F403A_407.AT32F403ACGT7,
+          'at32f403a': target_AT32F403A_407.AT32F403ACGT7,
           # AT32F407
           'at32f407xc': target_AT32F403A_407.AT32F407RCT7,
           'at32f407xe': target_AT32F403A_407.AT32F407RET7,
           'at32f407xg': target_AT32F403A_407.AT32F407RGT7,
+          'at32f407': target_AT32F403A_407.AT32F407RGT7,
           # AT32F421
           'at32f421x8': target_AT32F421.AT32F421C8T7,
           'at32f421x6': target_AT32F421.AT32F421C6T7,

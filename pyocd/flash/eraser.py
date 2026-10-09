@@ -93,8 +93,11 @@ class FlashEraser(object):
         # Erase all flash regions. This may be overkill if either each region's algo erases
         # all regions on the chip. But there's no current way to know whether this will happen,
         # so prefer to be certain.
+        skip_external = bool(self._session.options.get('flash.skip_external'))
         pname = self._session.target.selected_core.node_name
         for region in self._session.target.memory_map.iter_matching_regions(type=MemoryType.FLASH, pname=pname):
+            if skip_external and getattr(region, "is_external", False):
+                continue
             if region.flash is not None:
                 if region.flash.is_erase_all_supported:
                     region.flash.init(region.flash.Operation.ERASE)
