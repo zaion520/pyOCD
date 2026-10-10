@@ -85,11 +85,15 @@ def _get_interfaces():
         for dev in devices_in_both:
             v2_interfaces.remove(dev)
     else:
+        # Remember the matching v1 (HID) interface for each v2 (bulk) interface, so the v2 interface
+        # can fall back to it if it fails to open (e.g. the interface cannot be claimed). The v1
+        # interfaces are still removed from the returned list below, so only the v2 interface is used
+        # unless the fallback is needed.
         v1_by_id = {_get_unique_id(v1): v1 for v1 in v1_interfaces}
         for v2 in v2_interfaces:
             uid = _get_unique_id(v2)
             if uid in v1_by_id:
-                v2._fallback_v1 = v1_by_id[uid]
+                v2.fallback_v1 = v1_by_id[uid]
 
         devices_in_both = [v1 for v1 in v1_interfaces for v2 in v2_interfaces
                             if _get_unique_id(v1) == _get_unique_id(v2)]
@@ -758,14 +762,22 @@ class DAPAccessCMSISDAP(DAPAccessIntf):
         try:
             self._interface.open()
         except DAPAccessIntf.DeviceError as exc:
-            fallback = getattr(self._interface, '_fallback_v1', None)
-            if fallback is not None:
-                LOG.warning("Failed to open CMSIS-DAP v2 interface for probe %s (%s); falling back to v1 (HID)", self._unique_id, exc)
-                self._interface = fallback
-                self._protocol.interface = fallback
-                self._interface.open()
-            else:
+            # If this v2 (bulk) interface failed to open but the probe also exposes a v1 (HID)
+            # interface, transparently fall back to the v1 interface.
+            fallback = self._interface.fallback_v1
+            if fallback is None:
                 raise
+            LOG.warning("Failed to open CMSIS-DAP v2 interface for probe %s (%s); falling back to v1 (HID)",
+                    self._unique_id, exc)
+            self._interface = fallback
+            self._protocol.interface = fallback
+            try:
+                self._interface.open()
+            except DAPAccessIntf.DeviceError as v1_exc:
+                # Report both failures so the original v2 error isn't lost.
+                raise DAPAccessIntf.DeviceError(
+                        f"Unable to open CMSIS-DAP probe {self._unique_id} on either the v2 ({exc}) or "
+                        f"v1 ({v1_exc}) interface") from v1_exc
 
         # If this probe has already been opened and examined previously, we don't need to examine it again.
         if self._has_opened_once:

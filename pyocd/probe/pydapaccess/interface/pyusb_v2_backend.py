@@ -125,7 +125,8 @@ class PyUSBv2(Interface):
         try:
             usb.util.claim_interface(dev, interface_number)
         except (usb.core.USBError, NotImplementedError) as exc:
-            raise DAPAccessIntf.DeviceError(f"Unable to claim interface for probe {self.serial_number}") from exc
+            raise DAPAccessIntf.DeviceError(
+                    f"Unable to claim interface for probe {self.serial_number}: {exc}") from exc
 
         # Update all class variables if we made it here
         self.ep_out = ep_out

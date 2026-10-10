@@ -33,6 +33,9 @@ class Interface:
         self.serial_number = ""
         self.packet_count = 1
         self.packet_size = 64
+        # Optional CMSIS-DAP v1 (HID) interface to fall back to if this interface fails to open.
+        # Only used by the v2 backend when a probe also exposes a v1 interface.
+        self.fallback_v1 = None
 
     @property
     def has_swo_ep(self):
