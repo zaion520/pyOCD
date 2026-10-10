@@ -85,6 +85,12 @@ def _get_interfaces():
         for dev in devices_in_both:
             v2_interfaces.remove(dev)
     else:
+        v1_by_id = {_get_unique_id(v1): v1 for v1 in v1_interfaces}
+        for v2 in v2_interfaces:
+            uid = _get_unique_id(v2)
+            if uid in v1_by_id:
+                v2._fallback_v1 = v1_by_id[uid]
+
         devices_in_both = [v1 for v1 in v1_interfaces for v2 in v2_interfaces
                             if _get_unique_id(v1) == _get_unique_id(v2)]
         for dev in devices_in_both:
@@ -749,7 +755,17 @@ class DAPAccessCMSISDAP(DAPAccessIntf):
         if self._is_open:
             return
 
-        self._interface.open()
+        try:
+            self._interface.open()
+        except DAPAccessIntf.DeviceError as exc:
+            fallback = getattr(self._interface, '_fallback_v1', None)
+            if fallback is not None:
+                LOG.warning("Failed to open CMSIS-DAP v2 interface for probe %s (%s); falling back to v1 (HID)", self._unique_id, exc)
+                self._interface = fallback
+                self._protocol.interface = fallback
+                self._interface.open()
+            else:
+                raise
 
         # If this probe has already been opened and examined previously, we don't need to examine it again.
         if self._has_opened_once:

@@ -313,7 +313,7 @@ class ConnectHelper:
                         (colorama.Fore.YELLOW + board_info.name) if (board_info and board_info.vendor) else "",
                         "",
                         ])
-            except exceptions.Error as err:
+            except (exceptions.Error, Exception) as err:
                 # Trap errors to report the probe as inaccessible. Failing probes shouldn't prevent use
                 # of other working probes.
 

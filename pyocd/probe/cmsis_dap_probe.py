@@ -64,7 +64,7 @@ class _TemporaryOpen:
             if not self._device.is_open:
                 self._device.open()
                 self._did_open_link = True
-        except (DAPAccess.Error, exceptions.Error) as err:
+        except (DAPAccess.Error, exceptions.Error, NotImplementedError) as err:
             if not self._suppress_exceptions:
                 raise
             else:
@@ -78,7 +78,7 @@ class _TemporaryOpen:
             self._device.close()
 
         # Check for and possibly suppress an exception.
-        if (exc_type is not None) and issubclass(exc_type, exceptions.Error):
+        if (exc_type is not None) and (issubclass(exc_type, exceptions.Error) or issubclass(exc_type, NotImplementedError)):
             if self._suppress_exceptions:
                 return True
 
